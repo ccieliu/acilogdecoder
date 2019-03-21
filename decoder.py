@@ -5,29 +5,28 @@ import time
 import tarfile
 import os
 import datetime
+import hashlib
 import xml.etree.ElementTree as ET
 
 
-class decoder(object):
-    def __init__(self, srNo):
+class logDecoder(object):
+    'The ACI XML log decoder.'
+    def __init__(self, srNo='temp'):
         self.srNo = srNo  # Receive SR number
 
         # Setup a log formatter
         formatter = logging.Formatter(
             "%(asctime)s - %(filename)s[line:%(lineno)d] - %(funcName)s - %(levelname)s : %(message)s")
 
-        # Setup a log file handler and set level/formater
-        logFile = logging.FileHandler("./logs/" + self.srNo + "/runtime.log")
-        logFile.setFormatter(formatter)
         # Setup a log console handler and set level/formater
         logConsole = logging.StreamHandler()
         logConsole.setFormatter(formatter)
 
         # Setup a logger
         self.logger = logging.getLogger()
-        self.logger.setLevel(logging.INFO)
-        self.logger.addHandler(logFile)
+        self.logger.setLevel(logging.DEBUG)
         self.logger.addHandler(logConsole)
+        self.logger.debug("Created a new job for SR: " + str(srNo))
 
         def _checkAndInitDir(dirItem, srNo):
             '''Check if sr dir exist, if not create them'''
@@ -47,17 +46,28 @@ class decoder(object):
         for dirItem in requiredDir:
             '''Loop all required dirs. and init them'''
             _checkAndInitDir(dirItem=dirItem, srNo=self.srNo)
+        # Setup a log file handler and set level/formater
+        logFile = logging.FileHandler("./logs/" + self.srNo + "/runtime.log")
+        logFile.setFormatter(formatter)
+        self.logger.addHandler(logFile)
 
     def actionsTarFile(self, originFileName, actionName):
         '''
         Actions about tar/tar.gz/tgz files. include getnames or unzip.
         actionName can be 'getnames' or 'unzip' or 'zip'
         '''
-        originFileName = "./uploads/" + self.srNo + '/'+originFileName
-        targetPath = "./origin/" + self.srNo + "/"
+        originFilePath = "./uploads/" + self.srNo + '/'+originFileName
 
-        def __actions(actionName, targetPath=targetPath):
-            '''Two action for files.'''
+        originFileHash = hashlib.md5()
+        originFileHash.update(str(os.path.getsize(originFilePath)).encode())
+        self.originFileHash = originFileHash.hexdigest()[:6]
+
+        self.targetPath = "./origin/" + self.srNo + "/" + \
+            self.originFileHash + "/"
+        self.logger.debug('Take action: '+actionName+' at: '+self.targetPath)
+
+        def __actions(actionName, targetPath=self.targetPath):
+            '''Two action for files."getnames" & "unzip" '''
             if actionName == 'getnames':
                 # Return a list for zip file.
                 self.logger.debug(
@@ -76,17 +86,17 @@ class decoder(object):
         if (originFileName.endswith("tar.gz") or originFileName.endswith("tgz")):
             '''The actions for 'tgz/tar.gz' fils'''
             try:
-                tar = tarfile.open(originFileName, "r:gz")
+                tar = tarfile.open(originFilePath, "r:gz")
             except FileExistsError as e:
                 self.logger.error("File unzip error: " + str(e))
-            return(__actions(actionName, targetPath))
+            return(__actions(actionName, self.targetPath))
         elif (originFileName.endswith("tar")):
             '''The actions for 'tar' files.'''
             try:
-                tar = tarfile.open(originFileName, "r:")
+                tar = tarfile.open(originFilePath, "r:")
             except FileExistsError as e:
                 self.logger.error("File unzip error: " + str(e))
-            return(__actions(actionName, targetPath))
+            return(__actions(actionName, self.targetPath))
         else:
             self.logger.error("This type file do not support as for now.")
 
@@ -115,11 +125,17 @@ class decoder(object):
 
         # Parse the xml file, using iso-8859-5.
         self.tree = ET.parse(
-            "./origin/" + self.srNo + "/" + xmlFileName, parser=ET.XMLParser(encoding='iso-8859-5'))
+            # "./origin/" + self.srNo + "/" + xmlFileName, parser=ET.XMLParser(encoding='iso-8859-5'))
+            self.targetPath + xmlFileName, parser=ET.XMLParser(encoding='iso-8859-5'))
         # Get root from xml file
         self.root = self.tree.getroot()
-        outputFile = "./result/" + self.srNo + "/" + \
-            datetime.datetime.now().strftime("%Y%m%d_%H_%M_%S_%f-SR_")+self.srNo + ".txt"
+        outputFile = "./result/" + self.srNo + '/' + self.originFileHash + '/' +\
+            datetime.datetime.now().strftime("%Y%m%d_%H_%M_%S_%f_SR-") + \
+            self.srNo + '-' + xmlFileName + ".txt"
+        try:
+            os.mkdir("./result/" + self.srNo + '/' + self.originFileHash + '/')
+        except FileExistsError:
+            pass
         resultFile = open(outputFile, mode='w', encoding='utf-8')
         try:
             for child in self.root:  # Loop all tree from root
@@ -132,17 +148,20 @@ class decoder(object):
                 resultFile.write(resultStr+'\n')  # Writeline into the file
                 # print(resultStr)
             resultFile.close()  # Secure close the file.
-            return(resultFile)  # Return the path of the result file.
+            self.logger.debug("Output result file at: "+str(outputFile))
+            return(outputFile)  # Return the path of the result file.
         except KeyError as e:
             self.logger.error("There isn't a key named ->" +
-                              str(e) + ", please review your attrib list.")
+                              str(e) + " in file: " + xmlFileName + ", please review your attrib list.")
 
 
 if __name__ == "__main__":
     myattribList = ['severity', 'code', 'affected', 'changeSet', 'descr']
     myoriginFileName = 'unexpected-leafdown.tgz'
-    myxmlFileName = "eventRecord.xml"
+    Client = logDecoder()
 
-    Client = decoder(srNo="123")
-    Client.returnLineResult(
-        xmlFileName="faultRecord.xml_with_encode_issue", attribList=myattribList)
+
+    Client.actionsTarFile(originFileName=myoriginFileName,
+                          actionName='unzip')
+    for i in Client.actionsTarFile(originFileName=myoriginFileName, actionName='getnames'):
+        Client.returnLineResult(xmlFileName=i, attribList=myattribList)
