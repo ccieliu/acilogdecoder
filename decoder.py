@@ -102,7 +102,7 @@ class logDecoder(object):
 
     def compressResultDir(self):
         '''Compress all the SR file in result downloads dir'''
-        tarCompressDir = "./result/" + self.srNo
+        tarCompressDir = "./result/" + self.srNo + '/' +self.originFileHash
         tarTargetFile = "./downloads/" + self.srNo + \
             datetime.datetime.now().strftime("/%Y%m%d_%H_%M_%S_%f-SR_")+self.srNo + ".tgz"
 
@@ -111,6 +111,7 @@ class logDecoder(object):
         resultTarFile.add(
             tarCompressDir, arcname=os.path.basename(tarCompressDir))
         resultTarFile.close()
+        self.logger.debug("SR: "+str(self.srNo)+ ' Compress output: ' + tarTargetFile)
         return(tarTargetFile)  # Return the path of compressed file.
 
     def returnLogKeys(self):
@@ -165,3 +166,4 @@ if __name__ == "__main__":
                           actionName='unzip')
     for i in Client.actionsTarFile(originFileName=myoriginFileName, actionName='getnames'):
         Client.returnLineResult(xmlFileName=i, attribList=myattribList)
+    Client.compressResultDir()
