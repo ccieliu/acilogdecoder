@@ -30,13 +30,16 @@ class logDecoder(object):
 
         def _checkAndInitDir(dirItem, srNo):
             '''Check if sr dir exist, if not create them'''
-            self.dirLocation = './' + dirItem + '/' + srNo + '/'
+            self.dirLocation = './data/' + dirItem + '/' + srNo + '/'
 
             if os.path.exists(self.dirLocation):
                 # Check the dir if exists
                 self.logger.debug(self.dirLocation + " check pass.")
             else:
-                os.mkdir(self.dirLocation)
+                try:
+                    os.mkdir(self.dirLocation)
+                except FileNotFoundError:
+                    self.logger.critical("No SR dir found.")
                 self.logger.debug(self.dirLocation +
                                   " not exist, created them.")
 
@@ -47,7 +50,7 @@ class logDecoder(object):
             '''Loop all required dirs. and init them'''
             _checkAndInitDir(dirItem=dirItem, srNo=self.srNo)
         # Setup a log file handler and set level/formater
-        logFile = logging.FileHandler("./logs/" + self.srNo + "/runtime.log")
+        logFile = logging.FileHandler("./data/logs/" + self.srNo + "/runtime.log")
         logFile.setFormatter(formatter)
         self.logger.addHandler(logFile)
 
@@ -56,13 +59,16 @@ class logDecoder(object):
         Actions about tar/tar.gz/tgz files. include getnames or unzip.
         actionName can be 'getnames' or 'unzip' or 'zip'
         '''
-        originFilePath = "./uploads/" + self.srNo + '/'+originFileName
+        originFilePath = "./data/uploads/" + self.srNo + '/'+originFileName
 
         originFileHash = hashlib.md5()
-        originFileHash.update(str(os.path.getsize(originFilePath)).encode())
+        try:
+            originFileHash.update(str(os.path.getsize(originFilePath)).encode())
+        except FileNotFoundError:
+            self.logger.critical("Not found originFilePath")
         self.originFileHash = originFileHash.hexdigest()[:6]
 
-        self.targetPath = "./origin/" + self.srNo + "/" + \
+        self.targetPath = "./data/origin/" + self.srNo + "/" + \
             self.originFileHash + "/"
         self.logger.debug('Take action: '+actionName+' at: '+self.targetPath)
 
@@ -89,6 +95,8 @@ class logDecoder(object):
                 tar = tarfile.open(originFilePath, "r:gz")
             except FileExistsError as e:
                 self.logger.error("File unzip error: " + str(e))
+            except FileNotFoundError:
+                self.logger.critical("Not found originFilePath")
             return(__actions(actionName, self.targetPath))
         elif (originFileName.endswith("tar")):
             '''The actions for 'tar' files.'''
@@ -102,8 +110,8 @@ class logDecoder(object):
 
     def compressResultDir(self):
         '''Compress all the SR file in result downloads dir'''
-        tarCompressDir = "./result/" + self.srNo + '/' +self.originFileHash
-        tarTargetFile = "./downloads/" + self.srNo + \
+        tarCompressDir = "./data/result/" + self.srNo + '/' +self.originFileHash
+        tarTargetFile = "./data/downloads/" + self.srNo + \
             datetime.datetime.now().strftime("/%Y%m%d_%H_%M_%S_%f-SR_")+self.srNo + ".tgz"
 
         resultTarFile = tarfile.open(tarTargetFile, "w:gz")
@@ -126,15 +134,15 @@ class logDecoder(object):
 
         # Parse the xml file, using iso-8859-5.
         self.tree = ET.parse(
-            # "./origin/" + self.srNo + "/" + xmlFileName, parser=ET.XMLParser(encoding='iso-8859-5'))
+            # "./data/origin/" + self.srNo + "/" + xmlFileName, parser=ET.XMLParser(encoding='iso-8859-5'))
             self.targetPath + xmlFileName, parser=ET.XMLParser(encoding='iso-8859-5'))
         # Get root from xml file
         self.root = self.tree.getroot()
-        outputFile = "./result/" + self.srNo + '/' + self.originFileHash + '/' +\
+        outputFile = "./data/result/" + self.srNo + '/' + self.originFileHash + '/' +\
             datetime.datetime.now().strftime("%Y%m%d_%H_%M_%S_%f_SR-") + \
             self.srNo + '-' + xmlFileName + ".txt"
         try:
-            os.mkdir("./result/" + self.srNo + '/' + self.originFileHash + '/')
+            os.mkdir("./data/result/" + self.srNo + '/' + self.originFileHash + '/')
         except FileExistsError:
             pass
         resultFile = open(outputFile, mode='w', encoding='utf-8')
@@ -159,7 +167,7 @@ class logDecoder(object):
 if __name__ == "__main__":
     myattribList = ['severity', 'code', 'affected', 'changeSet', 'descr']
     myoriginFileName = 'unexpected-leafdown.tgz'
-    Client = logDecoder()
+    Client = logDecoder(srNo="000")
 
 
     Client.actionsTarFile(originFileName=myoriginFileName,
