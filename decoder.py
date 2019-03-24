@@ -120,7 +120,7 @@ class logDecoder(object):
             tarCompressDir, arcname=os.path.basename(tarCompressDir))
         resultTarFile.close()
         self.logger.debug("SR: "+str(self.srNo)+ ' Compress output: ' + tarTargetFile)
-        return(tarTargetFile)  # Return the path of compressed file.
+        return(tarTargetFile.lstrip("."))  # Return the path of compressed file.
 
     def returnLogKeys(self):
         '''Return all log attribute keys.'''
