@@ -38,9 +38,9 @@
                 <li class="nav-item active">
                     <a class="nav-link" href="#">Dashboard <span class="sr-only">(current)</span></a>
                 </li>
-                <li class="nav-item">
+                <!-- <li class="nav-item">
                     <a class="nav-link" href="#">Download</a>
-                </li>
+                </li> -->
                 <li> <a class="nav-link" data-toggle="collapse" href="#help" role="button" aria-expanded="false"
                         aria-controls="help">
                         How to
@@ -49,7 +49,7 @@
         </div>
         <ul class="navbar-nav navbar-right">
             <li class="nav-item active">
-                <a class="nav-link " href="mailto:yuxuliu@cisco.com">Support</a>
+                <a class="nav-link " href="mailto:yuxuliu@cisco.com">Support/Feedback</a>
             </li>
         </ul>
     </nav>
@@ -59,7 +59,11 @@
     <div class="container">
         <div class="collapse" id="help" style="margin-top:15px">
             <div class="alert alert-secondary" role="alert">
-                Help contest here
+                Please use below command collect logs from customer side:</br>
+                    <code>icurl 'http://localhost:7777/api/class/aaaModLR.xml?order-by=aaaModLR.created|desc&page-size=100000' > aaaModLR.xml
+                        </br>icurl 'http://localhost:7777/api/class/faultRecord.xml?order-by=faultRecord.created|desc&page-size=100000' > faultRecord.xml
+                        </br>icurl 'http://localhost:7777/api/class/eventRecord.xml?order-by=eventRecord.created|desc&page-size=100000' > eventRecord.xml
+                    </br>tar zcvf unexpected-logs.tgz *.xml</code>
             </div>
         </div>
 
