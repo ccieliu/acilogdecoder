@@ -150,7 +150,7 @@ class logDecoder(object):
             for child in self.root:  # Loop all tree from root
                 # All log line must start from 'created', and formated the timezone Eg."2019-03-15 09:12:00.005 GMT+08:00"
                 resultStr = child.attrib['created'].split(
-                    "+")[0].replace('T', " ") + ' GMT +'+child.attrib['created'].split("+")[1]
+                    "+")[0].replace('T', " ")
                 for attribItem in attribList:  # Loop attribList
                     # Append item which in the attriblist
                     resultStr = resultStr + splitStr + child.attrib[attribItem]
@@ -166,7 +166,7 @@ class logDecoder(object):
 
 if __name__ == "__main__":
     myattribList = ['severity', 'code', 'affected', 'changeSet', 'descr']
-    myoriginFileName = 'unexpected-leafdown.tgz'
+    myoriginFileName = 'eventRecord1.tar'
     Client = logDecoder(srNo="000")
 
 
