@@ -3,6 +3,7 @@ import re
 import json
 import time
 import tarfile
+import zipfile
 import os
 import datetime
 import hashlib
@@ -111,6 +112,18 @@ class logDecoder(object):
             except FileExistsError as e:
                 self.logger.error("File unzip error: " + str(e))
             return(__actions(actionName, self.targetPath))
+        elif (originFileName.endswith("zip")):
+            if actionName == "getnames":
+                fileNameList = []
+                for iFileName in zipfile.ZipFile(originFilePath,mode="r").namelist():
+                    if iFileName.endswith(".xml"):
+                        fileNameList.append(iFileName)
+                    else:
+                        self.logger.debug('Ignore file in zip: ' + iFileName)
+                return(fileNameList)
+            elif actionName == "unzip":
+                zipfile.ZipFile(originFilePath,mode="r").extractall(path=self.targetPath)
+                return True
         else:
             self.logger.error("This type file do not support as for now.")
 
@@ -172,7 +185,7 @@ class logDecoder(object):
 
 if __name__ == "__main__":
     myattribList = ['severity', 'code', 'affected', 'changeSet', 'descr']
-    myoriginFileName = 'tac1.tgz'
+    myoriginFileName = 'tac1.zip'
     Client = logDecoder(srNo="000")
 
 
