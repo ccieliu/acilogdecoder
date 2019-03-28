@@ -76,9 +76,15 @@ class logDecoder(object):
             '''Two action for files."getnames" & "unzip" '''
             if actionName == 'getnames':
                 # Return a list for zip file.
+                fileNameList = []
+                for iFileName in tar.getnames():
+                    if iFileName.endswith(".xml"):
+                        fileNameList.append(iFileName)
+                    else:
+                        self.logger.debug('Ignore file in zip: ' + iFileName)
                 self.logger.debug(
-                    "Return tar name list: " + str(tar.getnames()))
-                return(tar.getnames())
+                    "Return tar name list: " + str(fileNameList))
+                return(fileNameList)
             elif (actionName == 'unzip'):
                 # If the action name is 'unzip' and there was no path for unzip. the function will rais a exception.
                 tar.extractall(path=targetPath)
@@ -140,7 +146,7 @@ class logDecoder(object):
         self.root = self.tree.getroot()
         outputFile = "./data/result/" + self.srNo + '/' + self.originFileHash + '/' +\
             datetime.datetime.now().strftime("%Y%m%d_%H_%M_%S_%f_SR-") + \
-            self.srNo + '-' + xmlFileName + ".txt"
+            self.srNo + '-' + xmlFileName.replace("/","_") + ".txt"
         try:
             os.mkdir("./data/result/" + self.srNo + '/' + self.originFileHash + '/')
         except FileExistsError:
@@ -166,12 +172,13 @@ class logDecoder(object):
 
 if __name__ == "__main__":
     myattribList = ['severity', 'code', 'affected', 'changeSet', 'descr']
-    myoriginFileName = 'eventRecord1.tar'
+    myoriginFileName = 'tac1.tgz'
     Client = logDecoder(srNo="000")
 
 
     Client.actionsTarFile(originFileName=myoriginFileName,
                           actionName='unzip')
     for i in Client.actionsTarFile(originFileName=myoriginFileName, actionName='getnames'):
+        Client.logger.debug(i)
         Client.returnLineResult(xmlFileName=i, attribList=myattribList)
     Client.compressResultDir()
