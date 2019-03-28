@@ -7,7 +7,7 @@ import datetime
 app = Flask(__name__, static_folder="data", static_url_path="/data")
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
-ALLOWED_EXTENSIONS = set(["tar.gz", "tgz", "tar"])
+ALLOWED_EXTENSIONS = set(["tar.gz", "tgz", "tar","zip"])
 
 
 def allowed_file(filename):
@@ -28,9 +28,6 @@ def upload():
             srNo = str(request.form['srno'])
         else:
             srNo = 'temp'
-        if 'file' not in request.files:
-            flash('You must upload the file tye of: *.tgz *.tar.gz *.tar')
-            return redirect(url_for('index'))
         gotFile = request.files['file']
         if gotFile.filename == '':
             flash('No selected file')
@@ -45,6 +42,9 @@ def upload():
             # g.fileItemList = g.decoderClient.actionsTarFile(
             #     originFileName=g.originFileName, actionName='getnames')
             return redirect('/decode/' + srNo + originFileName + '/')
+        else:
+            flash('You must upload the file tye of: *.tgz *.tar.gz *.tar *.zip')
+            return redirect(url_for('index'))
 
 
 @app.route('/decode/<srNo>/<originFileName>/', methods=['GET', 'POST'])
