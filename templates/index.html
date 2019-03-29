@@ -60,7 +60,9 @@
         <div class="collapse" id="help" style="margin-top:15px">
             <div class="alert alert-secondary" role="alert">
                 Please use below command collect logs from customer side:</br>
-                    <code>icurl 'http://localhost:7777/api/class/aaaModLR.xml?order-by=aaaModLR.created|desc&page-size=100000' > aaaModLR.xml
+                <code>
+                        bash
+                    </br>icurl 'http://localhost:7777/api/class/aaaModLR.xml?order-by=aaaModLR.created|desc&page-size=100000' > aaaModLR.xml
                         </br>icurl 'http://localhost:7777/api/class/faultRecord.xml?order-by=faultRecord.created|desc&page-size=100000' > faultRecord.xml
                         </br>icurl 'http://localhost:7777/api/class/eventRecord.xml?order-by=eventRecord.created|desc&page-size=100000' > eventRecord.xml
                     </br>tar zcvf unexpected-logs.tgz *.xml</code>
@@ -130,7 +132,8 @@
                 <div class="form-group row">
                     {% if g.resultZipFilePath %}
                     <div class="col text-left">
-                            <a href="{{ g.resultZipFilePath }}" target="_blank" class="btn btn-lg btn-outline-dark "><i class="fa fa-download "></i> Download Result</a>
+                        <a href="{{ g.resultZipFilePath }}" target="_blank" class="btn btn-lg btn-outline-dark "><i
+                                class="fa fa-download "></i> Download Result</a>
                     </div>
                     {% endif %}
                     <div class="col text-right">
